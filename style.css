@@ -1,0 +1,17 @@
+body{
+    font-family: "Fira Sans", Arial, Helvetica, sans-serif;
+    color: white;
+    background-color: #1d1d1d;
+}
+textarea, input{
+    background-color: #1d1d1d;
+    color: white;
+    border: 1px solid #555555;
+    padding: 0.4em;
+}
+input{ font-family: "Fira Sans", Arial, Helvetica, sans-serif; }
+textarea:focus, input:focus{
+    outline: none;
+    border: 1px solid white;
+}
+a{ color: #aaa; }
