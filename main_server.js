@@ -50,17 +50,54 @@ class HTTPRequest{
     }
 }
 
+class HTTPResponse{
+    headers = new HTTPHeaders();
+    constructor(data, code=200, mimeType="text/plain", headers=null){
+        this.body = data;
+        this.type = mimeType;
+        this.code = code; this.reason = "";
+        this.verStr = "HTTP/1.0";
+        this.date = new Date();
+        this._updateHeaders();
+        if(headers) headers.entries.forEach(h => this.headers.set(h.name, h.value));
+    }
+    _updateHeaders(){
+        this.headers.set("Date", this.date.toUTCString());
+        this.headers.set("Server", navigator.userAgent);
+        this.headers.set("Content-Length", this.body.length);
+        this.headers.set("Content-Type", this.type);
+    }
+    toString(){
+        this._updateHeaders();
+        const lines = [];
+        lines.push(`${this.verStr} ${this.code} ${this.reason}`);
+        lines.push(this.headers.toString()); lines.push("");
+        lines.push(this.body);
+        return lines.join("\r\n");
+    }
+}
+
+const handler = r => {
+    return new HTTPResponse(`Hello World!\npath: ${r.path}\n`, 200, "text/plain");
+}
+
 log("* everything loaded!");
 log(`* trying to connect to bridge at ${BRIDGEURL}`);
 
 let ws = new WebSocket(BRIDGEURL);
-ws.onmessage = (event) => {
+ws.onmessage = event => {
     const data = event.data.toString();
     log("-> " + data);
     const r = new HTTPRequest(data);
     log(`* method: ${r.method} path: ${r.path} version ${r.verStr}`);
-    log("* headers:")
-    r.headers.entries.forEach(h => log(`${h.name}: ${h.value}`));
+    log("* headers:");
+    r.headers.entries.forEach(h => log(h.toString()));
+    const response = handler.apply(this, [r]);
+    response.verStr = r.verStr;
+    log("* response:");
+    log(`* code: ${response.code} type: ${response.type} version ${response.verStr}`);
+    log("<- " + response.toString());
+    ws.send(response.toString());
 }
 ws.onopen = () => log("* connected to bridge, waiting for data!");
 ws.onclose = () => log("* disconnected from bridge!");
