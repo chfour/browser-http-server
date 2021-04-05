@@ -64,21 +64,38 @@ class HTTPResponse{
     _updateHeaders(){
         this.headers.set("Date", this.date.toUTCString());
         this.headers.set("Server", navigator.userAgent);
-        this.headers.set("Content-Length", this.body.length);
+        this.headers.set("Content-Length", this._convertToUint8Array(this.body).length);
         this.headers.set("Content-Type", this.type);
     }
-    toString(){
+    _convertToUint8Array(d){
+        if(typeof d === "string") d = new TextEncoder().encode(d);
+        else if(d instanceof ArrayBuffer) d = new Uint8Array(d);
+        else if(d instanceof Uint8Array){}
+        else if(d instanceof ArrayBuffer) d = new Uint8Array(d);
+        else this._convertToUint8Array(JSON.stringify(d));
+        return d;
+    }
+    toUint8Array(){
         this._updateHeaders();
         const lines = [];
         lines.push(`${this.verStr} ${this.code} ${this.reason}`);
-        lines.push(this.headers.toString()); lines.push("");
-        lines.push(this.body);
-        return lines.join("\r\n");
+        lines.push(this.headers.toString()); lines.push(""); lines.push("");
+        const head = new TextEncoder().encode(lines.join("\r\n"));
+        const body = this._convertToUint8Array(this.body);
+        const merged = new Uint8Array(head.length + body.length);
+        merged.set(head); merged.set(body, head.length);
+        return merged;
+    }
+    toString(){
+        return new TextDecoder().decode(this.toUint8Array());
     }
 }
 
 const handler = r => {
-    return new HTTPResponse(`Hello World!\npath: ${r.path}\n`, 200, "text/plain");
+    switch(r.path){
+        case "/":
+            return new HTTPResponse(`<h1>Hello World!</h1>\n`, 200, "text/html");
+    }
 }
 
 log("* everything loaded!");
@@ -101,7 +118,7 @@ ws.onmessage = event => {
         log("<- " + response.toString());
         ws.send(JSON.stringify({
             type: "data",
-            data: Array.from(new TextEncoder().encode(response.toString()))
+            data: Array.from(response.toUint8Array())
         }))
     }else if(data.type === "msg"){
         switch(data.data){
