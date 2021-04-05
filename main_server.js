@@ -86,18 +86,34 @@ log(`* trying to connect to bridge at ${BRIDGEURL}`);
 
 let ws = new WebSocket(BRIDGEURL);
 ws.onmessage = event => {
-    const data = event.data.toString();
-    log("-> " + data);
-    const r = new HTTPRequest(data);
-    log(`* method: ${r.method} path: ${r.path} version ${r.verStr}`);
-    log("* headers:");
-    r.headers.entries.forEach(h => log(h.toString()));
-    const response = handler.apply(this, [r]);
-    response.verStr = r.verStr;
-    log("* response:");
-    log(`* code: ${response.code} type: ${response.type} version ${response.verStr}`);
-    log("<- " + response.toString());
-    ws.send(response.toString());
+    const data = JSON.parse(event.data);
+    if(data.type === "data"){
+        data.data = new TextDecoder().decode(new Uint8Array(data.data));
+        log("-> " + data.data);
+        const r = new HTTPRequest(data.data);
+        log(`* method: ${r.method} path: ${r.path} version ${r.verStr}`);
+        log("* headers:");
+        r.headers.entries.forEach(h => log(h.toString()));
+        const response = handler.apply(this, [r]);
+        response.verStr = r.verStr;
+        log("* response:");
+        log(`* code: ${response.code} type: ${response.type} version ${response.verStr}`);
+        log("<- " + response.toString());
+        ws.send(JSON.stringify({
+            type: "data",
+            data: Array.from(new TextEncoder().encode(response.toString()))
+        }))
+    }else if(data.type === "msg"){
+        switch(data.data){
+            case "connect":
+                log("* client connected!");
+                break;
+            case "disconnect":
+                log("* client disconnected");
+                break;
+        }
+    }
+    
 }
 ws.onopen = () => log("* connected to bridge, waiting for data!");
 ws.onclose = () => log("* disconnected from bridge!");
