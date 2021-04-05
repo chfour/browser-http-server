@@ -45,6 +45,28 @@ curl http://127.0.0.1:8080/ -v
 
 You should see all the headers displayed, followed by `<h1>Hello World!</h1>`.
 
+## how it works
+
+The bridge we started allows the browser to listen on TCP ports. It basically acts as a kind of "pipe", that on one side accepts TCP connections, and communicates with the browser through a websocket on the other side.
+
+Here's what a communication between the two sides might look like:
+
+```
+// -> = bridge to browser
+// <- = browser to bridge
+
+-> {"type":"msg","data":"connected"} // client connects
+-> {"type":"data","data":[97,97,97,97]} // client sends "aaaa"
+<- {"type":"data","data":[65,65,65,65]} // server responds with "AAAA"
+-> {"type":"msg","data":"disconnected"} // client disconnects
+```
+
+As you can see, these "packets" are JSON objects. This allows the bridge to communicate messages like a client disconnecting to the browser. Additionally, the browser can also send commands to the bridge, but this feature is currently not used anywhere.
+
+When a client connects and sends some data, that data is sent to the bridge, which forwards it over to the browser.
+
+The data gets to the browser, it's parsed, and a response is created, which is then sent back to the bridge, which sends it to the client.
+
 ## contributing?
 
 If anyone wants to improve this utterly useless gimmick, pull requests are very welcome.
