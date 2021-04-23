@@ -2,7 +2,7 @@
 
 An HTTP server, that runs... in the browser\*.
 
-*\*requires natively running bridge, browsers can't do TCP*
+\*requires natively running bridge, browsers can't do TCP
 
 ## currently implemented features
 
@@ -18,13 +18,13 @@ First, run `npm i` to install dependencies.
 
 To start the bridge (we'll need it later), run:
 
-```
+```text
 npm start
 ```
 
 Now, start python's http.server:
 
-```
+```text
 python3 -m http.server 8000
 ```
 
@@ -39,7 +39,7 @@ As weird as that may sound, it totally works. Somehow.
 
 You can also use curl:
 
-```
+```text
 curl http://127.0.0.1:8080/ -v
 ```
 
@@ -51,7 +51,7 @@ The bridge we started allows the browser to listen on TCP ports. It basically ac
 
 Here's what a communication between the two sides might look like:
 
-```
+```text
 // -> = bridge to browser
 // <- = browser to bridge
 
